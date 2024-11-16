@@ -46,12 +46,27 @@ public class Main {
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(clienSocket.getOutputStream()));) {
 
       String redisCommand;
-      while ((redisCommand = reader.readLine()) != null) {
+      String redisMessage;
+      // recevied data from the server will be of -> "*2\r\n$4\r\nECHO\r\n$3\r\nhey\r\n" this format 
+      // $number => will be the length of message followed by it 
+      while (true) {
+        redisCommand = reader.readLine();
         if ("ping".equalsIgnoreCase(redisCommand)) {
           writer.write("+PONG\r\n");
           writer.flush();
+        } else if("echo".equalsIgnoreCase(redisCommand)){
+            reader.readLine(); // ignoring the length of message
+            redisMessage = reader.readLine(); // capturing the actual message
+            clienSocket.getOutputStream().write(
+              String.format("$%d\r\n%s\r\n", redisMessage.length(), redisMessage)
+                  .getBytes());
+        } else {
+          continue;
         }
       }
+    }
+    catch (IOException e) {
+      System.out.println("IOException: " + e.getMessage());
     }
   }
 }
